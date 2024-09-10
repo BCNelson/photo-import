@@ -1,14 +1,24 @@
 {
   inputs = {
-    nixpkgs.url = "nixpkgs";
-    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-
+  outputs = { self, nixpkgs, rust-overlay }:
+    let
+      overlays = [
+        rust-overlay.overlays.default
+        (final: prev: {
+          rustToolchain = (prev.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml);
+        })
+      ];
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
+        pkgs = import nixpkgs { inherit overlays system; };
+      });
+    in
+    {
+      devShells = forEachSupportedSystem ({ pkgs }: let
         libraries = with pkgs;[
           webkitgtk
           gtk3
@@ -35,7 +45,17 @@
         ];
       in
       {
-        devShell = pkgs.mkShell {
+        default = pkgs.mkShell {
+          packages = with pkgs; [
+            rustToolchain
+            openssl
+            pkg-config
+            cargo-deny
+            cargo-edit
+            cargo-watch
+            rust-analyzer
+            pnpm
+          ];
           buildInputs = packages;
 
           shellHook =
@@ -45,4 +65,5 @@
             '';
         };
       });
+    };
 }
