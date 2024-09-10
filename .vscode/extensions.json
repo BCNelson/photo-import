@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "tauri-apps.tauri-vscode",
+    "tamasfe.even-better-toml",
+    "bbenoist.nix",
+    "eamodio.gitlens",
+    "rust-lang.rust-analyzer",
+    "vue.volar"
+  ]
+}
